@@ -1,0 +1,75 @@
+from flask import Flask, render_template, request
+
+app = Flask(__name__)
+
+def generate_feedback(sleep, grade, breakfast, nap, study_time):
+    feedback = []
+
+    # Sleep feedback
+    if sleep <= 5:
+        grade += 0.2
+    elif 5 < sleep <= 6:
+        grade += 0.1
+    elif 6 < sleep <= 7:
+        grade += -0.2
+    elif 7 < sleep <= 8:
+        grade += -0.2
+    elif 8 < sleep <= 9:
+        grade += 0.1
+    elif 9 < sleep:
+        grade += 0.3
+
+    # Breakfast feedback
+    if breakfast == "yes":
+        grade += -0.1
+
+    # Nap feedback
+    if nap <= 30: 
+        grade += -0.1
+    elif 30 < nap <= 60:
+        grade += 0.1
+    else:
+        grade += 0.2
+
+    # study time feedback
+    if study_time >= 6:
+        grade += -0.3
+    elif 5 <= study_time < 6:
+        grade += -0.1
+    elif 3 <= study_time < 5: 
+        grade += 0
+    elif 1 <= study_time < 3:
+        grade += 0.2
+    else:
+        grade += 0.3
+    
+    #전체 grade
+    if grade <= 1:
+        grade = 1
+    
+    feedback.append("이 학습방식을 유지할 경우 나오게 될 예상등급은 %.2f 입니다" %grade) 
+    return feedback
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    feedback = []
+
+    if request.method == "POST":
+        sleep = float(request.form["sleep"])
+        grade = float(request.form["grade"])
+        breakfast = request.form["breakfast"]
+        nap = float(request.form["nap"])
+        study_time = float(request.form["study_time"])
+
+        feedback = generate_feedback(
+            sleep,
+            grade,
+            breakfast,
+            nap,
+            study_time
+        )
+
+    return render_template("index.html", feedback=feedback)
+
+if __name__ == "__main__":
+    app.run(debug=True)
