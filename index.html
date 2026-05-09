@@ -1,112 +1,75 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>학습 최적화 솔루션 찾아주기</title>
+from flask import Flask, render_template, request
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            padding: 40px;
-        }
+app = Flask(__name__)
 
-        .container {
-            max-width: 700px;
-            margin: auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-        }
+def generate_feedback(sleep, grade, breakfast, nap, study_time):
+    feedback = []
 
-        h1 {
-            text-align: center;
-            color: #333;
-        }
+    # Sleep feedback
+    if sleep <= 5:
+        grade += 0.2
+    elif 5 < sleep <= 6:
+        grade += 0.1
+    elif 6 < sleep <= 7:
+        grade += -0.2
+    elif 7 < sleep <= 8:
+        grade += -0.2
+    elif 8 < sleep <= 9:
+        grade += 0.1
+    elif 9 < sleep:
+        grade += 0.3
 
-        label {
-            display: block;
-            margin-top: 15px;
-            font-weight: bold;
-        }
+    # Breakfast feedback
+    if breakfast == "yes":
+        grade += -0.1
 
-        input, select {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
+    # Nap feedback
+    if nap <= 30: 
+        grade += -0.1
+    elif 30 < nap <= 60:
+        grade += 0.1
+    else:
+        grade += 0.2
 
-        button {
-            width: 100%;
-            margin-top: 25px;
-            padding: 12px;
-            border: none;
-            background: #4a90e2;
-            color: white;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
+    # study time feedback
+    if study_time >= 6:
+        grade += -0.3
+    elif 5 <= study_time < 6:
+        grade += -0.1
+    elif 3 <= study_time < 5: 
+        grade += 0
+    elif 1 <= study_time < 3:
+        grade += 0.2
+    else:
+        grade += 0.3
+    
+    #전체 grade
+    if grade <= 1:
+        grade = 1
+    
+    feedback.append("이 학습방식을 유지할 경우 나오게 될 예상등급은 %.2f 입니다" %grade) 
+    return feedback
 
-        button:hover {
-            background: #357abd;
-        }
+@app.route("/", methods=["GET", "POST"])
+def index():
+    feedback = []
 
-        .feedback {
-            margin-top: 30px;
-            background: #eef5ff;
-            padding: 20px;
-            border-radius: 10px;
-        }
+    if request.method == "POST":
+        sleep = float(request.form["sleep"])
+        grade = float(request.form["grade"])
+        breakfast = request.form["breakfast"]
+        nap = float(request.form["nap"])
+        study_time = float(request.form["study_time"])
 
-        .feedback li {
-            margin-bottom: 10px;
-        }
-    </style>
-</head>
-<body>
+        feedback = generate_feedback(
+            sleep,
+            grade,
+            breakfast,
+            nap,
+            study_time
+        )
 
-<div class="container">
-    <h1>생활 습관 피드백 시스템</h1>
+    return render_template("index.html", feedback=feedback)
 
-    <form method="POST">
-
-        <label>수면 시간 (시간)</label>
-        <input type="number" step="0.1" name="sleep" required>
-
-        <label>등급</label>
-        <input type="number" step="0.1" name="grade" required>
-
-        <label>아침 식사 여부</label>
-        <select name="breakfast">
-            <option value="yes">예</option>
-            <option value="no">아니오</option>
-        </select>
-
-        <label>낮잠 시간 (분)</label>
-        <input type="number" step="1" name="nap" required>
-
-        <label>공부 시간 (시간)</label>
-        <input type="number" step="0.1" name="study_time" required>
-
-        <button type="submit">피드백 받기</button>
-    </form>
-
-    {% if feedback %}
-    <div class="feedback">
-        <h2>분석 결과</h2>
-        <ul>
-            {% for item in feedback %}
-            <li>{{ item }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-</div>
-
-</body>
-</html>
+if __name__ == "__main__":
+    app.run(debug=True)
